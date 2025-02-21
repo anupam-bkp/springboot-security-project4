@@ -12,8 +12,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
+
+import javax.sql.DataSource;
 
 @Configuration
 public class ProjectSecurityConfig {
@@ -28,34 +31,37 @@ public class ProjectSecurityConfig {
                 .requestMatchers("/myAccount", "/myBalance", "/myLoans", "/myCards").authenticated()
                 .requestMatchers("/notices", "/contact", "/error").permitAll());
 
-//        httpSecurity.formLogin(Customizer.withDefaults()); //disabled default Form login
+        httpSecurity.formLogin(Customizer.withDefaults()); //disabled default Form login
         httpSecurity.httpBasic(Customizer.withDefaults());  //http basic with password encoded in Base 64
         return httpSecurity.build();
     }
 
-    @Bean
+    /*@Bean
     public UserDetailsService userDetailsService(){
         UserDetails userDetails1 =
                 User.withUsername("user")
-//                        .password("{noop}12345") //used to use noop passwordEncoder
-                        .password("$2a$12$ChpNJ.g8D4DpuZhznsSnfOeD.9WxdYpOC64iaG2KE3DQkLDFQ1GgC")
-//                        .password("password-in-brypt-format")  //used to use Bcrypt passwordEncoder
-                        .authorities("read").build();
+//                        .password("{noop}12345") //used to use noop PasswordEncoder
+                           .authorities("read").build();
         UserDetails userDetails2 =
                 User.withUsername("admin")
 //                        .password("{noop}54321")
                         .password("$2a$12$2oV.eOTshycPHLUXQ1JZOeXXZkEKFwJg5D8Z4m/reoCRn2GSYHKYu")
-//                        .password("{bcrypt}$2a$12$2oV.eOTshycPHLUXQ1JZOeXXZkEKFwJg5D8Z4m/reoCRn2GSYHKYu")
+//                       .password("{bcrypt}$2a$12$2oV.eOTshycPHLUXQ1JZOeXXZkEKFwJg5D8Z4m/reoCRn2GSYHKYu")
                         .authorities("admin").build();
 
         return new InMemoryUserDetailsManager(userDetails1, userDetails2);
+    }*/
+
+    @Bean
+    public UserDetailsService userDetailsService(DataSource dataSource){
+        return new JdbcUserDetailsManager(dataSource);
     }
 
     @Bean
     public PasswordEncoder passwordEncoder(){
-        //Default PasswordEncoder - BCrypt
-//        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); //Not Working.... Check
-        return new BCryptPasswordEncoder(12);
+        //To work with factory use {bcrypt}password-in-bcrypt-format, {noop}password-in-plain-text
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); //if want to use distinct encoders.
+//        return new BCryptPasswordEncoder(12); //if only want to use only bcrypt password encoder
     }
 
     /*@Bean
